@@ -159,7 +159,12 @@ wsInstance.zoom(zoomLevel.value);
 wsInstance.on('error', (err) => {
 console.error('[AudioPlayer] WaveSurfer error:', err);
 waveformLoading.value = false;
-waveformError.value = err?.message || String(err);
+const msg = err?.message || String(err);
+if (msg.includes('fetch') || msg.includes('abort') || msg.includes('Abort') || msg.includes('CORS')) {
+waveformError.value = 'Waveform unavailable: the audio URL does not allow cross-origin access. Enable CORS on your audio storage (S3, GCS, etc.) to allow fetch from this domain.';
+} else {
+waveformError.value = msg;
+}
 });
 wsInstance.load(audioSrc.value);
 };
