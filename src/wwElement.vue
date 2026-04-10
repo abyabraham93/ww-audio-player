@@ -166,7 +166,9 @@ waveformError.value = 'Waveform unavailable: the audio URL does not allow cross-
 waveformError.value = msg;
 }
 });
-wsInstance.load(audioSrc.value);
+const proxyBase = props.content?.corsProxyUrl?.trim();
+const waveformSrc = proxyBase ? `${proxyBase}${encodeURIComponent(audioSrc.value)}` : audioSrc.value;
+wsInstance.load(waveformSrc);
 };
 
 watch(waveformContainer, (el) => {
