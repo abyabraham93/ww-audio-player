@@ -24,6 +24,11 @@ preload="metadata"
 <rect x="1" y="1" width="14" height="14" fill="currentColor"></rect>
 </svg>
 </button>
+<button class="control-button" :class="{ active: showWaveform }" @click="toggleWaveform" :disabled="!audioSrc">
+<svg viewBox="0 0 48 48" xmlns="http://www.w3.org/2000/svg" class="icon">
+<path fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2.5" d="M3.5,25.018h9.8767l2.2775-10.9731,2.2775,20.1622L20.2092,9.0623l2.2775,29.8754L24.7642,9.1925,27.0417,36.428l2.2775-25.4062L31.5967,29.778l2.2775-16.2172,2.2775,11.3627H44.5"/>
+</svg>
+</button>
 <div class="time-display">{{ formatTime(currentTime) }}</div>
 <div class="seek-container">
 <input
@@ -45,11 +50,27 @@ step="0.01"
 </button>
 </div>
 </div>
+<transition name="waveform-slide">
+<div v-if="showWaveform" class="waveform-panel">
+<div class="waveform-body">
+<div class="channel-labels">
+<div class="channel-label">Caller</div>
+<div class="channel-label">Agent</div>
+</div>
+<div ref="waveformContainer" class="waveform-container"></div>
+</div>
+<div class="zoom-control">
+<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" class="zoom-icon"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35M11 8v6M8 11h6"/></svg>
+<input type="range" class="zoom-slider" min="10" max="500" step="10" :value="zoomLevel" @input="onZoom" />
+</div>
+</div>
+</transition>
 </div>
 </template>
 
 <script>
-import { ref, computed, watch, onMounted, onBeforeUnmount } from 'vue';
+import { ref, computed, watch, onMounted, onBeforeUnmount, nextTick } from 'vue';
+import WaveSurfer from 'wavesurfer.js';
 
 export default {
 props: {
@@ -95,6 +116,68 @@ const primaryColor = computed(() => props.content?.primaryColor || '#1890ff');
 
 // Audio source
 const audioSrc = computed(() => props.content?.audioUrl || '');
+
+// Waveform toggle
+const showWaveform = ref(false);
+const waveformContainer = ref(null);
+const zoomLevel = ref(50);
+let wsInstance = null;
+
+const initWaveSurfer = () => {
+if (!waveformContainer.value || !audioSrc.value) return;
+if (wsInstance) {
+wsInstance.destroy();
+wsInstance = null;
+}
+wsInstance = WaveSurfer.create({
+container: waveformContainer.value,
+media: audioElement.value,
+splitChannels: [
+{
+waveColor: 'rgba(74, 154, 245, 0.85)',
+progressColor: 'rgba(26, 90, 191, 0.85)',
+height: 72,
+},
+{
+waveColor: 'rgba(245, 130, 74, 0.85)',
+progressColor: 'rgba(191, 70, 26, 0.85)',
+height: 72,
+},
+],
+interact: true,
+});
+wsInstance.load(audioSrc.value);
+wsInstance.on('ready', () => {
+wsInstance.zoom(zoomLevel.value);
+});
+};
+
+const toggleWaveform = async () => {
+showWaveform.value = !showWaveform.value;
+if (showWaveform.value) {
+await nextTick();
+initWaveSurfer();
+} else {
+if (wsInstance) {
+wsInstance.destroy();
+wsInstance = null;
+}
+}
+};
+
+const onZoom = (e) => {
+zoomLevel.value = Number(e.target.value);
+if (wsInstance) {
+wsInstance.zoom(zoomLevel.value);
+}
+};
+
+watch(() => props.content?.audioUrl, async () => {
+if (showWaveform.value && waveformContainer.value) {
+await nextTick();
+initWaveSurfer();
+}
+});
 
 // Playback speed control
 const cyclePlaybackSpeed = () => {
@@ -273,6 +356,10 @@ onBeforeUnmount(() => {
 if (audioElement.value && isPlaying.value) {
 audioElement.value.pause();
 }
+if (wsInstance) {
+wsInstance.destroy();
+wsInstance = null;
+}
 });
 
 return {
@@ -296,7 +383,12 @@ onLoadedMetadata,
 onEnded,
 onError,
 playbackSpeed,
-cyclePlaybackSpeed
+cyclePlaybackSpeed,
+showWaveform,
+waveformContainer,
+zoomLevel,
+toggleWaveform,
+onZoom,
 };
 }
 };
@@ -473,5 +565,107 @@ background: #222;
 &:active {
 background: #000;
 }
+}
+
+.waveform-panel {
+margin-top: 8px;
+border-radius: 8px;
+background: #fafafa;
+border: 1px solid #e8e8e8;
+overflow: hidden;
+padding: 10px 10px 8px;
+}
+
+.waveform-body {
+display: flex;
+align-items: stretch;
+gap: 0;
+}
+
+.channel-labels {
+display: flex;
+flex-direction: column;
+width: 44px;
+flex-shrink: 0;
+}
+
+.channel-label {
+height: 72px;
+display: flex;
+align-items: center;
+font-size: 10px;
+font-weight: 700;
+color: #999;
+letter-spacing: 0.6px;
+text-transform: uppercase;
+}
+
+.waveform-container {
+flex: 1;
+min-width: 0;
+}
+
+.zoom-control {
+display: flex;
+align-items: center;
+gap: 6px;
+margin-top: 8px;
+padding: 0 2px;
+}
+
+.zoom-icon {
+color: #aaa;
+flex-shrink: 0;
+display: flex;
+align-items: center;
+}
+
+.zoom-slider {
+flex: 1;
+height: 3px;
+-webkit-appearance: none;
+appearance: none;
+background: #e0e0e0;
+border-radius: 2px;
+cursor: pointer;
+outline: none;
+
+&::-webkit-slider-thumb {
+-webkit-appearance: none;
+width: 12px;
+height: 12px;
+border-radius: 50%;
+background: v-bind('primaryColor');
+cursor: pointer;
+border: none;
+}
+
+&::-moz-range-thumb {
+width: 12px;
+height: 12px;
+border-radius: 50%;
+background: v-bind('primaryColor');
+cursor: pointer;
+border: none;
+}
+}
+
+.waveform-slide-enter-active,
+.waveform-slide-leave-active {
+transition: all 0.25s ease;
+overflow: hidden;
+}
+
+.waveform-slide-enter-from,
+.waveform-slide-leave-to {
+opacity: 0;
+max-height: 0;
+margin-top: 0;
+}
+
+.waveform-slide-enter-to,
+.waveform-slide-leave-from {
+opacity: 1;
+max-height: 300px;
 }
 </style>

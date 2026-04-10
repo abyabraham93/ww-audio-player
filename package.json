@@ -5,6 +5,9 @@
     "build": "weweb build",
     "serve": "weweb serve"
   },
+  "dependencies": {
+    "wavesurfer.js": "^7.0.0"
+  },
   "devDependencies": {
     "@weweb/cli": "^3.8.13"
   }
