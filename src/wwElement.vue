@@ -174,7 +174,6 @@ audioElement.value.currentTime = newTime;
 }
 });
 wsInstance.on('error', (err) => {
-console.error('[AudioPlayer] WaveSurfer error:', err);
 waveformLoading.value = false;
 const msg = err?.message || String(err);
 if (msg.includes('fetch') || msg.includes('abort') || msg.includes('Abort') || msg.includes('CORS')) {
@@ -285,7 +284,6 @@ setPlayerState('playing');
 emit('trigger-event', { name: 'play', event: { time: currentTime.value } });
 })
 .catch(error => {
-console.error('Error playing audio:', error);
 loadError.value = true;
 emit('trigger-event', { name: 'error', event: { error: 'Failed to play audio' } });
 });
