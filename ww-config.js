@@ -61,6 +61,26 @@ export default {
       /* wwEditor:end */
     }
   },
+  variables: [
+    {
+      name: 'playerState',
+      label: { en: 'Player State' },
+      type: 'string',
+      defaultValue: 'stopped'
+    },
+    {
+      name: 'currentTime',
+      label: { en: 'Current Time' },
+      type: 'number',
+      defaultValue: 0
+    },
+    {
+      name: 'duration',
+      label: { en: 'Duration' },
+      type: 'number',
+      defaultValue: 0
+    }
+  ],
   triggerEvents: [
     {
       name: 'play',
