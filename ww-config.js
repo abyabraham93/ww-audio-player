@@ -59,24 +59,6 @@ export default {
         tooltip: 'The primary color used for active elements like the play button and progress bar',
       },
       /* wwEditor:end */
-    },
-    textColor: {
-      label: { 
-        en: 'Text Color' 
-      },
-      type: 'Color',
-      section: 'style',
-      bindable: true,
-      defaultValue: '#333',
-      /* wwEditor:start */
-      bindingValidation: {
-        type: 'string',
-        tooltip: 'Bind to a string representing a color value (hex, rgb, rgba)',
-      },
-      propertyHelp: {
-        tooltip: 'The color used for text elements like time display and icons',
-      },
-      /* wwEditor:end */
     }
   },
   triggerEvents: [

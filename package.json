@@ -1,1 +1,13 @@
-{"name":"audio-player","version":"1.0.1","scripts":{"build":"weweb build","serve":"weweb serve"},"devDependencies":{"@weweb/cli":"^3.8.13"}}
+{
+  "name": "audio-player",
+  "version": "1.0.1",
+  "lockfileVersion": 3,
+  "requires": true,
+  "packages": {
+    "": {
+      "name": "audio-player",
+      "version": "1.0.1",
+      "devDependencies": {}
+    }
+  }
+}
