@@ -58,6 +58,8 @@ step="0.01"
 <div class="channel-label">Agent</div>
 </div>
 <div ref="waveformContainer" class="waveform-container"></div>
+<div v-if="waveformLoading" class="waveform-status">Loading waveform…</div>
+<div v-if="waveformError" class="waveform-status waveform-status--error">{{ waveformError }}</div>
 </div>
 <div class="zoom-control">
 <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" class="zoom-icon"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35M11 8v6M8 11h6"/></svg>
@@ -121,6 +123,8 @@ const audioSrc = computed(() => props.content?.audioUrl || '');
 const showWaveform = ref(false);
 const waveformContainer = ref(null);
 const zoomLevel = ref(50);
+const waveformLoading = ref(false);
+const waveformError = ref('');
 let wsInstance = null;
 
 const initWaveSurfer = () => {
@@ -129,39 +133,47 @@ if (wsInstance) {
 wsInstance.destroy();
 wsInstance = null;
 }
+waveformLoading.value = true;
+waveformError.value = '';
 wsInstance = WaveSurfer.create({
 container: waveformContainer.value,
 media: audioElement.value,
+height: 72,
 splitChannels: [
 {
 waveColor: 'rgba(74, 154, 245, 0.85)',
 progressColor: 'rgba(26, 90, 191, 0.85)',
-height: 72,
 },
 {
 waveColor: 'rgba(245, 130, 74, 0.85)',
 progressColor: 'rgba(191, 70, 26, 0.85)',
-height: 72,
 },
 ],
 interact: true,
 });
-wsInstance.load(audioSrc.value);
 wsInstance.on('ready', () => {
+waveformLoading.value = false;
 wsInstance.zoom(zoomLevel.value);
 });
+wsInstance.on('error', (err) => {
+console.error('[AudioPlayer] WaveSurfer error:', err);
+waveformLoading.value = false;
+waveformError.value = err?.message || String(err);
+});
+wsInstance.load(audioSrc.value);
 };
 
-const toggleWaveform = async () => {
-showWaveform.value = !showWaveform.value;
-if (showWaveform.value) {
-await nextTick();
+watch(waveformContainer, (el) => {
+if (el && showWaveform.value) {
 initWaveSurfer();
-} else {
-if (wsInstance) {
+}
+});
+
+const toggleWaveform = () => {
+showWaveform.value = !showWaveform.value;
+if (!showWaveform.value && wsInstance) {
 wsInstance.destroy();
 wsInstance = null;
-}
 }
 };
 
@@ -172,9 +184,8 @@ wsInstance.zoom(zoomLevel.value);
 }
 };
 
-watch(() => props.content?.audioUrl, async () => {
+watch(() => props.content?.audioUrl, () => {
 if (showWaveform.value && waveformContainer.value) {
-await nextTick();
 initWaveSurfer();
 }
 });
@@ -387,6 +398,8 @@ cyclePlaybackSpeed,
 showWaveform,
 waveformContainer,
 zoomLevel,
+waveformLoading,
+waveformError,
 toggleWaveform,
 onZoom,
 };
@@ -647,6 +660,19 @@ border-radius: 50%;
 background: v-bind('primaryColor');
 cursor: pointer;
 border: none;
+}
+}
+
+.waveform-status {
+font-size: 11px;
+color: #aaa;
+padding: 4px 2px;
+font-style: italic;
+
+&--error {
+color: #e53935;
+font-style: normal;
+font-weight: 500;
 }
 }
 
