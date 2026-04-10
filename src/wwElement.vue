@@ -58,7 +58,7 @@ step="0.01"
 <div class="channel-label">Agent</div>
 </div>
 <div :id="waveformId" ref="waveformContainer" class="waveform-container"></div>
-<div v-if="waveformLoading" class="waveform-status">Loading waveform…</div>
+<div v-if="waveformLoading" class="waveform-status">Loading waveform… {{ waveformProgress }}%</div>
 <div v-if="waveformError" class="waveform-status waveform-status--error">{{ waveformError }}</div>
 </div>
 <div class="zoom-control">
@@ -126,6 +126,7 @@ const waveformId = `ap-wave-${props.uid}`;
 const zoomLevel = ref(50);
 const waveformLoading = ref(false);
 const waveformError = ref('');
+const waveformProgress = ref(0);
 let wsInstance = null;
 
 const initWaveSurfer = () => {
@@ -136,9 +137,12 @@ wsInstance = null;
 }
 waveformLoading.value = true;
 waveformError.value = '';
+const proxyBase = props.content?.corsProxyUrl?.trim();
+const waveformSrc = proxyBase ? `${proxyBase}${audioSrc.value}` : audioSrc.value;
+waveformProgress.value = 0;
 wsInstance = WaveSurfer.create({
 container: `#${waveformId}`,
-media: audioElement.value,
+url: waveformSrc,
 height: 72,
 splitChannels: [
 {
@@ -152,9 +156,22 @@ progressColor: 'rgba(191, 70, 26, 0.85)',
 ],
 interact: true,
 });
+wsInstance.setVolume(0);
+wsInstance.on('loading', (percent) => {
+waveformProgress.value = percent;
+});
 wsInstance.on('ready', () => {
 waveformLoading.value = false;
+waveformProgress.value = 100;
 wsInstance.zoom(zoomLevel.value);
+if (audioElement.value && audioElement.value.currentTime > 0 && duration.value > 0) {
+wsInstance.seekTo(audioElement.value.currentTime / duration.value);
+}
+});
+wsInstance.on('interaction', (newTime) => {
+if (audioElement.value) {
+audioElement.value.currentTime = newTime;
+}
 });
 wsInstance.on('error', (err) => {
 console.error('[AudioPlayer] WaveSurfer error:', err);
@@ -166,12 +183,6 @@ waveformError.value = 'Waveform unavailable: the audio URL does not allow cross-
 waveformError.value = msg;
 }
 });
-const proxyBase = props.content?.corsProxyUrl?.trim();
-const waveformSrc = proxyBase ? `${proxyBase}${audioSrc.value}` : audioSrc.value;
-console.log('[AudioPlayer] proxyBase:', proxyBase);
-console.log('[AudioPlayer] audioSrc:', audioSrc.value);
-console.log('[AudioPlayer] waveformSrc:', waveformSrc);
-wsInstance.load(waveformSrc);
 };
 
 watch(waveformContainer, (el) => {
@@ -334,6 +345,9 @@ const onTimeUpdate = () => {
 if (!audioElement.value) return;
 currentTime.value = audioElement.value.currentTime;
 setAudioCurrentTime(currentTime.value);
+if (wsInstance && duration.value > 0) {
+wsInstance.seekTo(currentTime.value / duration.value);
+}
 };
 
 const onLoadedMetadata = () => {
@@ -412,6 +426,7 @@ waveformId,
 zoomLevel,
 waveformLoading,
 waveformError,
+waveformProgress,
 toggleWaveform,
 onZoom,
 };
