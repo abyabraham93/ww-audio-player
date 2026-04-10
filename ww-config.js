@@ -47,11 +47,11 @@ export default {
       type: 'Text',
       section: 'settings',
       bindable: true,
-      defaultValue: 'https://audio-waveform-proxy.super-morning-31df.workers.dev/?url=',
+      defaultValue: 'https://audio-waveform-proxy.super-morning-31df.workers.dev/',
       /* wwEditor:start */
       bindingValidation: {
         type: 'string',
-        tooltip: 'Prefix URL of a CORS proxy for waveform loading (e.g. https://your-proxy.workers.dev/?url=). The audio URL will be appended to this value.',
+        tooltip: 'Base URL of a CORS proxy for waveform loading (e.g. https://your-proxy.workers.dev/). The audio URL will be appended to this path.',
       },
       propertyHelp: {
         tooltip: 'Required if your audio server does not support CORS. Set up a Cloudflare Worker proxy and paste its URL here. Playback is unaffected — only waveform rendering uses this.',

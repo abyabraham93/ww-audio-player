@@ -167,7 +167,7 @@ waveformError.value = msg;
 }
 });
 const proxyBase = props.content?.corsProxyUrl?.trim();
-const waveformSrc = proxyBase ? `${proxyBase}${encodeURIComponent(audioSrc.value)}` : audioSrc.value;
+const waveformSrc = proxyBase ? `${proxyBase}${audioSrc.value}` : audioSrc.value;
 wsInstance.load(waveformSrc);
 };
 
