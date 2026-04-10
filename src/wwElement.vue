@@ -63,7 +63,7 @@ step="0.01"
 </div>
 <div class="zoom-control">
 <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2" class="zoom-icon"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35M11 8v6M8 11h6"/></svg>
-<input type="range" class="zoom-slider" min="10" max="500" step="10" :value="zoomLevel" @input="onZoom" />
+<input type="range" class="zoom-slider" min="10" max="500" step="10" :value="zoomLevel" @input="onZoom" :disabled="!waveformReady" />
 </div>
 </div>
 </transition>
@@ -127,6 +127,7 @@ const zoomLevel = ref(50);
 const waveformLoading = ref(false);
 const waveformError = ref('');
 const waveformProgress = ref(0);
+const waveformReady = ref(false);
 let wsInstance = null;
 
 const initWaveSurfer = () => {
@@ -137,6 +138,7 @@ wsInstance = null;
 }
 waveformLoading.value = true;
 waveformError.value = '';
+waveformReady.value = false;
 const proxyBase = props.content?.corsProxyUrl?.trim();
 const waveformSrc = proxyBase ? `${proxyBase}${audioSrc.value}` : audioSrc.value;
 waveformProgress.value = 0;
@@ -162,6 +164,7 @@ waveformProgress.value = percent;
 });
 wsInstance.on('ready', () => {
 waveformLoading.value = false;
+waveformReady.value = true;
 waveformProgress.value = 100;
 wsInstance.zoom(zoomLevel.value);
 if (audioElement.value && audioElement.value.currentTime > 0 && duration.value > 0) {
@@ -195,12 +198,16 @@ showWaveform.value = !showWaveform.value;
 if (!showWaveform.value && wsInstance) {
 wsInstance.destroy();
 wsInstance = null;
+waveformReady.value = false;
+waveformLoading.value = false;
+waveformError.value = '';
+waveformProgress.value = 0;
 }
 };
 
 const onZoom = (e) => {
 zoomLevel.value = Number(e.target.value);
-if (wsInstance) {
+if (wsInstance && waveformReady.value) {
 wsInstance.zoom(zoomLevel.value);
 }
 };
@@ -343,7 +350,7 @@ const onTimeUpdate = () => {
 if (!audioElement.value) return;
 currentTime.value = audioElement.value.currentTime;
 setAudioCurrentTime(currentTime.value);
-if (wsInstance && duration.value > 0) {
+if (wsInstance && waveformReady.value && duration.value > 0) {
 wsInstance.seekTo(currentTime.value / duration.value);
 }
 };
@@ -685,6 +692,13 @@ border-radius: 50%;
 background: v-bind('primaryColor');
 cursor: pointer;
 border: none;
+}
+
+&:disabled {
+opacity: 0.35;
+cursor: not-allowed;
+&::-webkit-slider-thumb { cursor: not-allowed; }
+&::-moz-range-thumb { cursor: not-allowed; }
 }
 }
 
