@@ -57,7 +57,7 @@ step="0.01"
 <div class="channel-label">Caller</div>
 <div class="channel-label">Agent</div>
 </div>
-<div ref="waveformContainer" class="waveform-container"></div>
+<div :id="waveformId" ref="waveformContainer" class="waveform-container"></div>
 <div v-if="waveformLoading" class="waveform-status">Loading waveform…</div>
 <div v-if="waveformError" class="waveform-status waveform-status--error">{{ waveformError }}</div>
 </div>
@@ -122,6 +122,7 @@ const audioSrc = computed(() => props.content?.audioUrl || '');
 // Waveform toggle
 const showWaveform = ref(false);
 const waveformContainer = ref(null);
+const waveformId = `ap-wave-${props.uid}`;
 const zoomLevel = ref(50);
 const waveformLoading = ref(false);
 const waveformError = ref('');
@@ -136,7 +137,7 @@ wsInstance = null;
 waveformLoading.value = true;
 waveformError.value = '';
 wsInstance = WaveSurfer.create({
-container: waveformContainer.value,
+container: `#${waveformId}`,
 media: audioElement.value,
 height: 72,
 splitChannels: [
@@ -397,6 +398,7 @@ playbackSpeed,
 cyclePlaybackSpeed,
 showWaveform,
 waveformContainer,
+waveformId,
 zoomLevel,
 waveformLoading,
 waveformError,
