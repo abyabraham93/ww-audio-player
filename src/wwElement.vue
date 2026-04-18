@@ -432,6 +432,7 @@ zoomLevel,
 waveformLoading,
 waveformError,
 waveformProgress,
+waveformReady,
 toggleWaveform,
 onZoom,
 };
